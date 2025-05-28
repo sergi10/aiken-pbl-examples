@@ -3,6 +3,11 @@ use cardano/script_context.{Minting, ScriptContext}
 use cardano/transaction.{OutputReference, Transaction, placeholder}
 use mocktail.{mock_utxo_ref}
 
+// use cardano/script_context.{Minting, ScriptContext}
+
+// 1 - Define a custom type for datum and another for redeemer.
+
+
 /// Learning Objective:
 /// 1. Basic type signature of spending validator smart contract
 /// 2. Basic idea of transaction
@@ -51,4 +56,5 @@ test m102_fail_test_always_succeed_spending_validator() fail {
       info: Minting(#""),
     }
   !always_succeed.else(context)
+  // always_succeed.spend(_,_,_,context)?
 }

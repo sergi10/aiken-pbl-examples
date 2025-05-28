@@ -1,0 +1,34 @@
+  [31m×[0m I found multiple suitable validators and I need you to tell me which one to pick.
+[36m  help: [0mHere's a list of all validators I've found in your project. Select one of them using the appropriate
+        options:
+        
+        → module_102/always_succeed_mint.always_succeed.mint
+        → module_102/always_succeed_mint.always_succeed.else
+        → module_102/always_succeed_spend.always_succeed.spend
+        → module_102/always_succeed_spend.always_succeed.else
+        → module_103/l0_mock_tx.always_succeed.mint
+        → module_103/l0_mock_tx.always_succeed.spend
+        → module_103/l0_mock_tx.always_succeed.else
+        → module_201/l1_redeemer.check_redeemer.spend
+        → module_201/l1_redeemer.check_redeemer.else
+        → module_201/l2_datum.check_datum.spend
+        → module_201/l2_datum.check_datum.else
+        → module_201/l3_parameters.always_succeed.mint
+        → module_201/l3_parameters.always_succeed.else
+        → module_201/l4_reference_inputs.check_reference_inputs.spend
+        → module_201/l4_reference_inputs.check_reference_inputs.else
+        → module_201/l5_signatures.check_signatures.spend
+        → module_201/l5_signatures.check_signatures.else
+        → module_201/l6_time.check_time.spend
+        → module_201/l6_time.check_time.else
+        → module_201/l7_inputs_outputs.check_only_script_input.spend
+        → module_201/l7_inputs_outputs.check_only_script_input.else
+        → module_202/l1_input_address.check_only_script_input.spend
+        → module_202/l1_input_address.check_only_script_input.else
+        → module_202/l2_2_input_value.check_script_input_value.spend
+        → module_202/l2_2_input_value.check_script_input_value.else
+        → module_202/l3_input_datum.check_script_input_value.spend
+        → module_202/l3_input_datum.check_script_input_value.else
+        → module_202/l4_outputs.state_change.spend
+        → module_202/l4_outputs.state_change.else
+
