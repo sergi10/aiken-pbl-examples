@@ -3,7 +3,7 @@ use aiken/primitive/string
 use aiken/crypto.{blake2b_224, blake2b_256}
 use aiken/collection/dict
 use aiken/collection/list
-use aiken/interval.{Interval}
+use aiken/interval
 // use cardano/script_context.{Minting, ScriptContext}
 use cardano/transaction.{ValidityRange, Transaction, Input, Output, NoDatum, OutputReference, placeholder}
 use cardano/assets.{PolicyId, from_asset, from_lovelace}
@@ -118,7 +118,7 @@ fn prepare_tx(policyID: ByteArray, name: ByteArray, quantity: Int, vr: ValidityR
 
 validator task103 {
   spend(_d, _r, own_ref: OutputReference, transaction: Transaction) -> Bool {
-    let Transaction { mint, inputs, .. } = transaction
+    let Transaction { inputs, .. } = transaction
     expect Some(in) = list.find(inputs, fn(input) { input.output_reference == own_ref })
     // - Address: Verify signer
     let signer = in.output.address.payment_credential
