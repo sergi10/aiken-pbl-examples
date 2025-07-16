@@ -9,23 +9,63 @@ use cardano/transaction.{ValidityRange, Transaction, Input, Output, NoDatum, Out
 use cardano/assets.{from_lovelace}
 use cardano/address.{Address, VerificationKey}
 
+/// Get the hash224 generator for a given random ByteArray.
+///```aiken
+///let khash224 = get_hash224_generator("random_string")
+///```
 fn get_hash224_generator(random: ByteArray) -> ByteArray {
   blake2b_224(random)
 }
 
-fn get_hash_256_generator(random: ByteArray) -> ByteArray {
+/// Get the hash224 generator for a given random ByteArray.
+///```aiken
+///let khash256 = get_hash256_generator("random_string")
+///```
+fn get_hash256_generator(random: ByteArray) -> ByteArray {
   blake2b_256(random)
 }
 
+/// Get the output reference generator for a given transaction ID and index.
+///```aiken
+///let out_ref = get_output_reference_generatror(1, 0)
+///```
+/// This function creates an `OutputReference` with the transaction ID and index.
+/// It uses the `get_hash256_generator` to create a hash of the transaction ID.
+/// The `OutputReference` is used to reference a specific output in a transaction.
+/// The `transaction_id` is a hash of the transaction ID, and the `output_index
 fn get_output_reference_generatror(tx_id: Int, idx: Int) -> OutputReference {
   let tx_id_b: ByteArray = bytearray.from_string(string.from_int(tx_id))
   OutputReference {
-    transaction_id: get_hash_256_generator(tx_id_b),
+    transaction_id: get_hash256_generator(tx_id_b),
     output_index: idx,
   }
   
 }
 
+/// Prepare an input for a transaction.
+/// This function creates an `Input` with a specific output reference, owner, and amount.
+///```aiken
+///let input = prepare_input(1, 0, "GimbaLabs", 10_000_000)
+///```
+/// The `out_ref_id` is the transaction ID, `out_ref_idx` is the output index,
+/// `owner` is the owner of the input, and `amount` is the amount of ADA to be transferred.
+/// The `owner` is a `ByteArray` that represents the owner's address.
+/// The function returns an `Input` that can be used in a transaction.
+/// The `Input` contains an `OutputReference` and an `Output`.
+/// The `OutputReference` is created using the `get_output_reference_generatror` function
+/// and the `Output` is created with the owner's address, amount, and other properties.
+/// The `Output` contains the address, value, datum, and reference script.
+/// The `address` is created using the `VerificationKey` of the owner.
+/// The `value` is created using the `from_lovelace` function to convert the amount from lovelace to ADA.
+/// The `datum` is set to `NoDatum`, indicating that there is no associated data.
+/// The `reference_script` is set to `None`, indicating that there is no reference script.
+/// The function returns the `Input` that can be used in a transaction.
+/// The `Input` is used to reference a specific output in a transaction.
+/// The `OutputReference` is used to reference a specific output in a transaction.
+/// The `Output` is used to create a new output in a transaction.
+/// The `Output` contains the address, value, datum, and reference script.
+/// The `address` is created using the `VerificationKey` of the owner.
+/// The `value` is created using the `from_lovelace` function to convert the      
 fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount: Int) -> Input {
   let outr: OutputReference = get_output_reference_generatror(out_ref_id, out_ref_idx)
   let vkSender: ByteArray = get_hash224_generator(owner)  
@@ -45,6 +85,18 @@ fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount: In
   }
 }
 
+
+/// Prepare an output for a transaction.
+/// This function creates an `Output` with a specific owner and amount.
+///```aiken
+///let output = prepare_output("GimbaLabs", 9_000_000)
+///```
+/// The `owner` is a `ByteArray` that represents the owner's address.
+/// The `amount` is the amount of ADA to be transferred.
+/// The function returns an `Output` that can be used in a transaction.
+/// The `Output` contains the address, value, datum, and reference script.
+/// The `address` is created using the `VerificationKey` of the owner.
+/// The `value` is created using the `from_lovelace` function to convert the      
 fn prepare_output(owner: ByteArray, amount: Int) -> Output {
   let vkReciber: ByteArray = get_hash224_generator(owner)  
   let addrReceiber = Address {
@@ -60,6 +112,17 @@ fn prepare_output(owner: ByteArray, amount: Int) -> Output {
   
 }
 
+/// Prepare a transaction with a list of inputs, outputs, and a validity range.
+/// This function creates a `Transaction` with the specified inputs, outputs, and validity range.
+///```aiken     
+///  let tx = prepare_tx(input_list, output_list, vr)   
+///```
+/// The `input_list` is a list of `Input` objects, the `output_list` is a list of `Output` objects,
+/// and the `vr` is a `ValidityRange` that specifies the validity period of the transaction.
+/// The function returns a `Transaction` that can be used in a validator.
+/// The `Transaction` contains the inputs, outputs, validity range, and fee.
+/// The `inputs` are the list of inputs that reference previous outputs.
+/// The `outputs` are the list of outputs that will be created in the transaction.    
 fn prepare_tx(input_list: List<Input>, output_list: List<Output>, vr: ValidityRange) -> Transaction {
   Transaction {
     ..placeholder,
