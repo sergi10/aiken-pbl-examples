@@ -1,14 +1,20 @@
+///// Get the policy ID generator for a given random ByteArray.
+
+use aiken/crypto.{blake2b_224, blake2b_256}
 // module lib/estADA/mytools
 use aiken/primitive/bytearray
 use aiken/primitive/string
-use aiken/crypto.{blake2b_224, blake2b_256}//, VerificationKeyHash}
+use cardano/address.{Address, VerificationKey}
+use cardano/assets.{AssetName, PolicyId, Value, add, from_lovelace, merge}
+//, VerificationKeyHash}
 // use aiken/collection/dict
 // use aiken/collection/list
 // use aiken/interval
 // use cardano/script_context.{Minting, ScriptContext}
-use cardano/transaction.{ValidityRange, Transaction, Input, Output, NoDatum, OutputReference, placeholder}
-use cardano/assets.{PolicyId, Value, AssetName, from_lovelace, add, merge}
-use cardano/address.{Address, VerificationKey}
+use cardano/transaction.{
+  Input, NoDatum, Output, OutputReference, Transaction, ValidityRange,
+  placeholder,
+}
 
 /// Get the hash224 generator for a given random ByteArray.
 ///```aiken
@@ -33,7 +39,7 @@ pub fn getHash(encode: ByteArray, random: ByteArray) -> ByteArray {
   when encode is {
     "blake2b_224" -> get_hash224_generator(random)
     "blake2b_256" -> get_hash256_generator(random)
-     _ -> ""
+    _ -> ""
   }
 }
 
@@ -46,12 +52,16 @@ pub fn getHash(encode: ByteArray, random: ByteArray) -> ByteArray {
 ///    1
 ///  )
 ///```
-pub fn add_value_to_value(value: Value, policy_id: PolicyId, asset_name: AssetName, amount: Int) -> Value {
+pub fn add_value_to_value(
+  value: Value,
+  policy_id: PolicyId,
+  asset_name: AssetName,
+  amount: Int,
+) -> Value {
   let assets: Value = add(value, policy_id, asset_name, amount)
   assets
 }
 
-///// Get the policy ID generator for a given random ByteArray.
 ///```aiken
 ///let policy_id = get_policiy_id_generic("random_string")
 ///```
@@ -80,7 +90,7 @@ pub fn get_output_reference_generatror(tx_id: Int, idx: Int) -> OutputReference 
     //transaction_id: get_hash256_generator(tx_id_b),
     transaction_id: tx_hash,
     output_index: idx,
-  } 
+  }
 }
 
 /// Prepare an input for a transaction.
@@ -107,18 +117,27 @@ pub fn get_output_reference_generatror(tx_id: Int, idx: Int) -> OutputReference 
 /// The `Output` contains the address, value, datum, and reference script.
 /// The `address` is created using the `VerificationKey` of the owner.
 /// The `value` is created using the `from_lovelace` function to convert the      
-pub fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount: Int, extra_value: Option<Value>) -> Input {
-  let outr: OutputReference = get_output_reference_generatror(out_ref_id, out_ref_idx)
-  let vkSender: ByteArray = getHash("blake2b_224", owner)  
-  let addrSender = Address {
-    payment_credential: VerificationKey(vkSender),
-    stake_credential: None,
-  }
+pub fn prepare_input(
+  out_ref_id: Int,
+  out_ref_idx: Int,
+  owner: ByteArray,
+  amount: Int,
+  extra_value: Option<Value>,
+) -> Input {
+  let outr: OutputReference =
+    get_output_reference_generatror(out_ref_id, out_ref_idx)
+  let vkSender: ByteArray = getHash("blake2b_224", owner)
+  let addrSender =
+    Address {
+      payment_credential: VerificationKey(vkSender),
+      stake_credential: None,
+    }
   let tx_value: Value = from_lovelace(amount)
-  let output_value: Value = when extra_value is {
-    None -> tx_value
-    Some(extra_value) -> merge(tx_value, extra_value)
-  }
+  let output_value: Value =
+    when extra_value is {
+      None -> tx_value
+      Some(extra_value) -> merge(tx_value, extra_value)
+    }
 
   Input {
     output_reference: outr,
@@ -127,10 +146,9 @@ pub fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount
       value: output_value,
       datum: NoDatum,
       reference_script: None,
-    }
+    },
   }
 }
-
 
 /// Prepare an output for a transaction.
 /// This function creates an `Output` with a specific owner and amount.
@@ -143,22 +161,53 @@ pub fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount
 /// The `Output` contains the address, value, datum, and reference script.
 /// The `address` is created using the `VerificationKey` of the owner.
 /// The `value` is created using the `from_lovelace` function to convert the      
-pub fn prepare_output(receiver: ByteArray, amount: Int, policy: PolicyId, name: ByteArray, token_amount: Int) -> Output {
-  let vkReciver: ByteArray = getHash("blake2b_224", receiver)  
-  let addrReceiber = Address {
-    payment_credential: VerificationKey(vkReciver),
-    stake_credential: None,
+pub fn prepare_output(
+  receiver: ByteArray,
+  amount: Int,
+  extra_value: Option<Value>,
+) -> Output {
+  let vkReciver: ByteArray = getHash("blake2b_224", receiver)
+  let addrReceiber =
+    Address {
+      payment_credential: VerificationKey(vkReciver),
+      stake_credential: None,
+    }
+  let tx_value: Value = from_lovelace(amount)
+  let output_value: Value =
+    when extra_value is {
+      None -> tx_value
+      Some(extra_value) -> merge(tx_value, extra_value)
+    }
+  Output {
+    address: addrReceiber,
+    value: output_value,
+    datum: NoDatum,
+    reference_script: None,
   }
+}
+
+pub fn prepare_output_token(
+  receiver: ByteArray,
+  amount: Int,
+  policy: PolicyId,
+  name: ByteArray,
+  token_amount: Int,
+) -> Output {
+  let vkReciver: ByteArray = getHash("blake2b_224", receiver)
+  let addrReceiber =
+    Address {
+      payment_credential: VerificationKey(vkReciver),
+      stake_credential: None,
+    }
   let value: Value = from_lovelace(amount)
   let output_value: Value = add(value, policy, name, token_amount)
 
   Output {
-      address: addrReceiber,
-      value: output_value,
-      datum: NoDatum,
-      reference_script: None,
+    address: addrReceiber,
+    value: output_value,
+    datum: NoDatum,
+    reference_script: None,
   }
-  
 }
 
 /// Prepare a transaction with a list of inputs, outputs, and a validity range.
@@ -172,7 +221,11 @@ pub fn prepare_output(receiver: ByteArray, amount: Int, policy: PolicyId, name: 
 /// The `Transaction` contains the inputs, outputs, validity range, and fee.
 /// The `inputs` are the list of inputs that reference previous outputs.
 /// The `outputs` are the list of outputs that will be created in the transaction.    
-pub fn prepare_tx(input_list: List<Input>, output_list: List<Output>, vr: ValidityRange) -> Transaction {
+pub fn prepare_tx(
+  input_list: List<Input>,
+  output_list: List<Output>,
+  vr: ValidityRange,
+) -> Transaction {
   Transaction {
     ..placeholder,
     inputs: input_list,
