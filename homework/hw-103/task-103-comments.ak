@@ -87,6 +87,7 @@ fn prepare_tx(policyID: ByteArray, name: ByteArray, quantity: Int, vr: ValidityR
     stake_credential: None,
   }
 
+
   let input =
     Input {
       output_reference: outr,

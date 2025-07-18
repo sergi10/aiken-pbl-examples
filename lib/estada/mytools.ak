@@ -7,7 +7,7 @@ use aiken/crypto.{blake2b_224, blake2b_256}//, VerificationKeyHash}
 // use aiken/interval
 // use cardano/script_context.{Minting, ScriptContext}
 use cardano/transaction.{ValidityRange, Transaction, Input, Output, NoDatum, OutputReference, placeholder}
-use cardano/assets.{PolicyId, Value, from_lovelace, add}
+use cardano/assets.{PolicyId, Value, AssetName, from_lovelace, add, merge}
 use cardano/address.{Address, VerificationKey}
 
 /// Get the hash224 generator for a given random ByteArray.
@@ -26,12 +26,29 @@ fn get_hash256_generator(random: ByteArray) -> ByteArray {
   blake2b_256(random)
 }
 
+/// Get the hash generator for a given encode and random ByteArray.
+///```aiken
+///let hash = getHash("blake2b_224", "random_string")
 pub fn getHash(encode: ByteArray, random: ByteArray) -> ByteArray {
   when encode is {
     "blake2b_224" -> get_hash224_generator(random)
     "blake2b_256" -> get_hash256_generator(random)
      _ -> ""
   }
+}
+
+/// Add a value to a value with a specific policy ID and asset name.
+///```aiken
+/// let list_of_assets: Value = add_value_to_value(
+///    from_lovelace(0),
+///    policy_id_1,
+///    token_name_1,
+///    1
+///  )
+///```
+pub fn add_value_to_value(value: Value, policy_id: PolicyId, asset_name: AssetName, amount: Int) -> Value {
+  let assets: Value = add(value, policy_id, asset_name, amount)
+  assets
 }
 
 ///// Get the policy ID generator for a given random ByteArray.
@@ -90,19 +107,24 @@ pub fn get_output_reference_generatror(tx_id: Int, idx: Int) -> OutputReference 
 /// The `Output` contains the address, value, datum, and reference script.
 /// The `address` is created using the `VerificationKey` of the owner.
 /// The `value` is created using the `from_lovelace` function to convert the      
-pub fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount: Int) -> Input {
+pub fn prepare_input(out_ref_id: Int, out_ref_idx: Int, owner: ByteArray, amount: Int, extra_value: Option<Value>) -> Input {
   let outr: OutputReference = get_output_reference_generatror(out_ref_id, out_ref_idx)
   let vkSender: ByteArray = getHash("blake2b_224", owner)  
   let addrSender = Address {
     payment_credential: VerificationKey(vkSender),
     stake_credential: None,
   }
+  let tx_value: Value = from_lovelace(amount)
+  let output_value: Value = when extra_value is {
+    None -> tx_value
+    Some(extra_value) -> merge(tx_value, extra_value)
+  }
 
   Input {
     output_reference: outr,
     output: Output {
       address: addrSender,
-      value: from_lovelace(amount),
+      value: output_value,
       datum: NoDatum,
       reference_script: None,
     }
