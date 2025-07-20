@@ -1,16 +1,8 @@
-///// Get the policy ID generator for a given random ByteArray.
-
 use aiken/crypto.{blake2b_224, blake2b_256}
-// module lib/estADA/mytools
 use aiken/primitive/bytearray
 use aiken/primitive/string
 use cardano/address.{Address, VerificationKey}
 use cardano/assets.{AssetName, PolicyId, Value, add, from_lovelace, merge}
-//, VerificationKeyHash}
-// use aiken/collection/dict
-// use aiken/collection/list
-// use aiken/interval
-// use cardano/script_context.{Minting, ScriptContext}
 use cardano/transaction.{
   Input, NoDatum, Output, OutputReference, Transaction, ValidityRange,
   placeholder,
@@ -35,6 +27,7 @@ fn get_hash256_generator(random: ByteArray) -> ByteArray {
 /// Get the hash generator for a given encode and random ByteArray.
 ///```aiken
 ///let hash = getHash("blake2b_224", "random_string")
+///```
 pub fn getHash(encode: ByteArray, random: ByteArray) -> ByteArray {
   when encode is {
     "blake2b_224" -> get_hash224_generator(random)
@@ -62,27 +55,18 @@ pub fn add_value_to_value(
   assets
 }
 
+/// This function creates a policy ID by hashing the random ByteArray using blake2b_224.
 ///```aiken
 ///let policy_id = get_policiy_id_generic("random_string")
 ///```
-/// This function creates a policy ID by hashing the random ByteArray using blake2b_224.
-/// The policy ID is used to identify a specific policy in the Cardano blockchain.
-/// The `random` parameter is a `ByteArray` that represents the random input.
-/// The function returns a `PolicyId` that can be used in transactions.
-/// The `PolicyId` is a hash of the random input, which is used to create
-/// a unique identifier for the policy.
 pub fn get_policiyId(random: ByteArray) -> PolicyId {
   getHash("blake2b_224", random)
 }
 
-/// Get the output reference generator for a given transaction ID and index.
+/// This function creates an `OutputReference` with the transaction ID and index.
 ///```aiken
 ///let out_ref = get_output_reference_generatror(1, 0)
 ///```
-/// This function creates an `OutputReference` with the transaction ID and index.
-/// It uses the `get_hash256_generator` to create a hash of the transaction ID.
-/// The `OutputReference` is used to reference a specific output in a transaction.
-/// The `transaction_id` is a hash of the transaction ID, and the `output_index
 pub fn get_output_reference_generatror(tx_id: Int, idx: Int) -> OutputReference {
   let tx_id_b: ByteArray = bytearray.from_string(string.from_int(tx_id))
   let tx_hash: ByteArray = getHash("blake2b_256", tx_id_b)
@@ -93,30 +77,31 @@ pub fn get_output_reference_generatror(tx_id: Int, idx: Int) -> OutputReference 
   }
 }
 
-/// Prepare an input for a transaction.
-/// This function creates an `Input` with a specific output reference, owner, and amount.
+/// Get the address generator for a given verification key and optional stake credential.
 ///```aiken
-///let input = prepare_input(1, 0, "GimbaLabs", 10_000_000)
+///let address = get_address("verification_key", None)
 ///```
-/// The `out_ref_id` is the transaction ID, `out_ref_idx` is the output index,
-/// `owner` is the owner of the input, and `amount` is the amount of ADA to be transferred.
-/// The `owner` is a `ByteArray` that represents the owner's address.
-/// The function returns an `Input` that can be used in a transaction.
-/// The `Input` contains an `OutputReference` and an `Output`.
-/// The `OutputReference` is created using the `get_output_reference_generatror` function
-/// and the `Output` is created with the owner's address, amount, and other properties.
-/// The `Output` contains the address, value, datum, and reference script.
-/// The `address` is created using the `VerificationKey` of the owner.
-/// The `value` is created using the `from_lovelace` function to convert the amount from lovelace to ADA.
-/// The `datum` is set to `NoDatum`, indicating that there is no associated data.
-/// The `reference_script` is set to `None`, indicating that there is no reference script.
-/// The function returns the `Input` that can be used in a transaction.
-/// The `Input` is used to reference a specific output in a transaction.
-/// The `OutputReference` is used to reference a specific output in a transaction.
-/// The `Output` is used to create a new output in a transaction.
-/// The `Output` contains the address, value, datum, and reference script.
-/// The `address` is created using the `VerificationKey` of the owner.
-/// The `value` is created using the `from_lovelace` function to convert the      
+pub fn get_address(
+  verification_key: ByteArray,
+  stake_credential: Option<ByteArray>,
+) -> Address {
+  let vk: ByteArray = getHash("blake2b_224", verification_key)
+  let addr: Address =
+    when stake_credential is {
+      None -> address.from_verification_key(vk)
+      Some(sc) ->
+        address.with_delegation_key(
+          address.from_verification_key(vk),
+          getHash("blake2b_224", sc),
+        )
+    }
+  addr
+}
+
+/// This function creates an `Input` with a specific output reference, owner, ADA amount and optional `Value`.
+///```aiken
+///let input = prepare_input(1, 0, "GimbaLabs", 10_000_000, None)
+///```
 pub fn prepare_input(
   out_ref_id: Int,
   out_ref_idx: Int,
@@ -150,17 +135,10 @@ pub fn prepare_input(
   }
 }
 
-/// Prepare an output for a transaction.
-/// This function creates an `Output` with a specific owner and amount.
+/// This function creates an `Output` with a specific receiver and amount, that can be used in a transaction.
 ///```aiken
-///let output = prepare_output("GimbaLabs", 9_000_000)
+///let output = prepare_output("GimbaLabs", 9_000_000, None)
 ///```
-/// The `owner` is a `ByteArray` that represents the owner's address.
-/// The `amount` is the amount of ADA to be transferred.
-/// The function returns an `Output` that can be used in a transaction.
-/// The `Output` contains the address, value, datum, and reference script.
-/// The `address` is created using the `VerificationKey` of the owner.
-/// The `value` is created using the `from_lovelace` function to convert the      
 pub fn prepare_output(
   receiver: ByteArray,
   amount: Int,
@@ -186,6 +164,11 @@ pub fn prepare_output(
   }
 }
 
+/// This function creates an `Output` with a specific owner, ADA amount, policy ID,
+/// asset name, and token amount.
+///```aiken
+///let output_token = prepare_output_token("GimbaLabs", 9_000_000, "policy_id", "token_name", 100)
+///```
 pub fn prepare_output_token(
   receiver: ByteArray,
   amount: Int,
@@ -215,12 +198,6 @@ pub fn prepare_output_token(
 ///```aiken     
 ///  let tx = prepare_tx(input_list, output_list, vr)   
 ///```
-/// The `input_list` is a list of `Input` objects, the `output_list` is a list of `Output` objects,
-/// and the `vr` is a `ValidityRange` that specifies the validity period of the transaction.
-/// The function returns a `Transaction` that can be used in a validator.
-/// The `Transaction` contains the inputs, outputs, validity range, and fee.
-/// The `inputs` are the list of inputs that reference previous outputs.
-/// The `outputs` are the list of outputs that will be created in the transaction.    
 pub fn prepare_tx(
   input_list: List<Input>,
   output_list: List<Output>,
